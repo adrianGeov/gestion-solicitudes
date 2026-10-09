@@ -5,6 +5,7 @@ import java.time.LocalDate;
 
 import com.evaluacion.gestion_solicitudes.entity.EstatusSolicitud;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotBlank;
@@ -12,6 +13,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 
+@Schema (description = "Datos para crear o actualizar una solicitud")
 public record SolicitudRequest(
 
         @NotBlank(message = "El título es obligatorio") @Size(max = 150, message = "El título no debe exceder 150 caracteres") String titulo,

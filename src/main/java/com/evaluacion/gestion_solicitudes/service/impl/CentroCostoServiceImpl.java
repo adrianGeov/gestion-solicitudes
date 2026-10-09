@@ -15,6 +15,7 @@ import com.evaluacion.gestion_solicitudes.repository.CentroCostoRepository;
 import com.evaluacion.gestion_solicitudes.repository.SolicitudRepository;
 import com.evaluacion.gestion_solicitudes.service.CentroCostoService;
 
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -30,6 +31,7 @@ public class CentroCostoServiceImpl implements CentroCostoService {
     private final SolicitudRepository solicitudRepository;
     private final CentroCostoMapper mapper;
 
+    @Operation(summary = "Crear solicitud", description = "Si no se envía estatus, se crea como PENDIENTE.")
     @Override
     @Transactional
     public CentroCostoResponse crear(CentroCostoRequest request) {
@@ -44,11 +46,13 @@ public class CentroCostoServiceImpl implements CentroCostoService {
         return mapper.toResponse(guardado);
     }
 
+    @Operation(summary = "Consultar solicitud por id")
     @Override
     public CentroCostoResponse obtenerPorId(Long id) {
         return mapper.toResponse(buscarActivo(id));
     }
 
+    @Operation(summary = "Listar solicitudes con filtros", description = "Filtros opcionales combinables: título, estatus, centro de costo y rango de fechas.")
     @Override
     public Page<CentroCostoResponse> listar(String nombre, Pageable pageable) {
         Page<CentroCosto> pagina = (nombre == null || nombre.isBlank())
@@ -58,6 +62,7 @@ public class CentroCostoServiceImpl implements CentroCostoService {
         return pagina.map(mapper::toResponse);
     }
 
+    @Operation(summary = "Actualizar solicitud", description = "Solo se permiten cambios en solicitudes PENDIENTE.")
     @Override
     @Transactional
     public CentroCostoResponse actualizar(Long id, CentroCostoRequest request) {
@@ -75,6 +80,7 @@ public class CentroCostoServiceImpl implements CentroCostoService {
         return mapper.toResponse(actualizado);
     }
 
+    @Operation(summary = "Eliminar solicitud (lógico)")
     @Override
     @Transactional
     public void eliminar(Long id) {

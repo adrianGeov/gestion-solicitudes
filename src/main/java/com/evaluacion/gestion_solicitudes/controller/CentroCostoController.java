@@ -22,9 +22,11 @@ import com.evaluacion.gestion_solicitudes.dto.CentroCostoResponse;
 import com.evaluacion.gestion_solicitudes.dto.PageResponse;
 import com.evaluacion.gestion_solicitudes.service.CentroCostoService;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
+@Tag (name = "Centros de Costo", description = "Administración de centros de costo")
 @RestController
 @RequestMapping("/api/v1/centros-costo")
 @RequiredArgsConstructor
