@@ -125,6 +125,7 @@ GET {{baseUrl}}/solicitudes/abc
 
 ### 400 - Monto negativo
 POST {{baseUrl}}/solicitudes
+Authorization: Bearer {{tokenAdmin}}
 Content-Type: application/json
 
 {
@@ -150,3 +151,56 @@ GET {{baseUrl}}/usuarios-externos/1
 
 ### 404 - Usuario externo inexistente
 GET {{baseUrl}}/usuarios-externos/999
+
+### ===== AUTENTICACIÓN =====
+
+### Login como ADMIN
+# @name loginAdmin
+POST {{baseUrl}}/auth/login
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "Admin123*"
+}
+
+### Login como USER
+# @name loginUser
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "usuario",
+  "password": "Usuario123*"
+}
+
+### ===== PRUEBAS DE SEGURIDAD =====
+
+### 401 - Sin token
+GET {{baseUrl}}/centros-costo
+
+### 401 - Token inválido
+GET {{baseUrl}}/centros-costo
+Authorization: Bearer token-falso
+
+### 401 - Credenciales incorrectas
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "incorrecta"
+}
+
+### 200 - USER sí puede consultar
+GET {{baseUrl}}/centros-costo
+Authorization: Bearer {{tokenUser}}
+
+### 403 - USER NO puede eliminar
+DELETE {{baseUrl}}/solicitudes/2
+Authorization: Bearer {{tokenUser}}
+
+###
+@tokenAdmin = {{loginAdmin.response.body.token}}
+@tokenUser = {{loginUser.response.body.token}}

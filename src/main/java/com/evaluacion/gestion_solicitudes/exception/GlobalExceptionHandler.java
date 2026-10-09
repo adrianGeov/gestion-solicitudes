@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
 
 import com.evaluacion.gestion_solicitudes.dto.ErrorResponse;
 
@@ -116,6 +118,22 @@ public class GlobalExceptionHandler {
                                                                HttpServletRequest request) {
         log.error("Falla en servicio externo: {}", ex.getMessage());
         return build(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage(), request, List.of());
+    }
+
+    // ===== 401 / 403 =====
+
+    /** Credenciales incorrectas en el login */
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<ErrorResponse> handleAuthentication(AuthenticationException ex,
+                                                              HttpServletRequest request) {
+        log.warn("Intento de autenticación fallido en {}", request.getRequestURI());
+        return build(HttpStatus.UNAUTHORIZED, "Usuario o contraseña incorrectos", request, List.of());
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAccessDenied(AccessDeniedException ex,
+                                                            HttpServletRequest request) {
+        return build(HttpStatus.FORBIDDEN, "No tiene permisos para realizar esta operación", request, List.of());
     }
 
     // ===== Utilitario =====
