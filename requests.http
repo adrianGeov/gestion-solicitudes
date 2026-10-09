@@ -4,10 +4,11 @@
 
 ### Crear centro de costo
 POST {{baseUrl}}/centros-costo
+Authorization: Bearer {{tokenUser}}
 Content-Type: application/json
 
 {
-  "codigo": "CC-001",
+  "codigo": "CC-111",
   "nombre": "Tecnología",
   "descripcion": "Área de sistemas"
 }

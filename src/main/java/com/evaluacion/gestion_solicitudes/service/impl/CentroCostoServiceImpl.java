@@ -1,10 +1,5 @@
 package com.evaluacion.gestion_solicitudes.service.impl;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import com.evaluacion.gestion_solicitudes.dto.CentroCostoRequest;
 import com.evaluacion.gestion_solicitudes.dto.CentroCostoResponse;
 import com.evaluacion.gestion_solicitudes.entity.CentroCosto;
@@ -13,11 +8,14 @@ import com.evaluacion.gestion_solicitudes.exception.ResourceNotFoundException;
 import com.evaluacion.gestion_solicitudes.mapper.CentroCostoMapper;
 import com.evaluacion.gestion_solicitudes.repository.CentroCostoRepository;
 import com.evaluacion.gestion_solicitudes.repository.SolicitudRepository;
+import com.evaluacion.gestion_solicitudes.security.UsuarioAutenticadoProvider;
 import com.evaluacion.gestion_solicitudes.service.CentroCostoService;
-
-import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Service
@@ -30,8 +28,8 @@ public class CentroCostoServiceImpl implements CentroCostoService {
     private final CentroCostoRepository centroCostoRepository;
     private final SolicitudRepository solicitudRepository;
     private final CentroCostoMapper mapper;
+    private final UsuarioAutenticadoProvider usuarioProvider;
 
-    @Operation(summary = "Crear solicitud", description = "Si no se envía estatus, se crea como PENDIENTE.")
     @Override
     @Transactional
     public CentroCostoResponse crear(CentroCostoRequest request) {
@@ -41,18 +39,20 @@ public class CentroCostoServiceImpl implements CentroCostoService {
             throw new BusinessException("Ya existe un centro de costo con el código " + codigo);
         }
 
-        CentroCosto guardado = centroCostoRepository.save(mapper.toEntity(request));
-        log.info("Centro de costo creado con id {}", guardado.getId());
+        String usuario = usuarioProvider.obtenerUsuarioOSistema();
+        CentroCosto entity = mapper.toEntity(request);
+        entity.setCreadoPor(usuario);
+
+        CentroCosto guardado = centroCostoRepository.save(entity);
+        log.info("Centro de costo creado con id {} por {}", guardado.getId(), usuario);
         return mapper.toResponse(guardado);
     }
 
-    @Operation(summary = "Consultar solicitud por id")
     @Override
     public CentroCostoResponse obtenerPorId(Long id) {
         return mapper.toResponse(buscarActivo(id));
     }
 
-    @Operation(summary = "Listar solicitudes con filtros", description = "Filtros opcionales combinables: título, estatus, centro de costo y rango de fechas.")
     @Override
     public Page<CentroCostoResponse> listar(String nombre, Pageable pageable) {
         Page<CentroCosto> pagina = (nombre == null || nombre.isBlank())
@@ -62,7 +62,6 @@ public class CentroCostoServiceImpl implements CentroCostoService {
         return pagina.map(mapper::toResponse);
     }
 
-    @Operation(summary = "Actualizar solicitud", description = "Solo se permiten cambios en solicitudes PENDIENTE.")
     @Override
     @Transactional
     public CentroCostoResponse actualizar(Long id, CentroCostoRequest request) {
@@ -74,13 +73,15 @@ public class CentroCostoServiceImpl implements CentroCostoService {
             throw new BusinessException("Ya existe otro centro de costo con el código " + codigo);
         }
 
+        String usuario = usuarioProvider.obtenerUsuarioOSistema();
         mapper.updateEntity(entity, request);
+        entity.setModificadoPor(usuario);
+
         CentroCosto actualizado = centroCostoRepository.saveAndFlush(entity);
-        log.info("Centro de costo {} actualizado", id);
+        log.info("Centro de costo {} actualizado por {}", id, usuario);
         return mapper.toResponse(actualizado);
     }
 
-    @Operation(summary = "Eliminar solicitud (lógico)")
     @Override
     @Transactional
     public void eliminar(Long id) {
@@ -91,13 +92,14 @@ public class CentroCostoServiceImpl implements CentroCostoService {
             throw new BusinessException("No se puede eliminar el centro de costo porque tiene solicitudes activas");
         }
 
-        entity.setActivo(false); // Eliminación lógica
-        log.info("Centro de costo {} eliminado lógicamente", id);
+        String usuario = usuarioProvider.obtenerUsuarioOSistema();
+        entity.setActivo(false);              // Eliminación lógica
+        entity.setModificadoPor(usuario);     // Queda registro de quién eliminó
+        log.info("Centro de costo {} eliminado lógicamente por {}", id, usuario);
     }
 
     private CentroCosto buscarActivo(Long id) {
         return centroCostoRepository.findByIdAndActivoTrue(id)
                 .orElseThrow(() -> new ResourceNotFoundException(RECURSO, id));
     }
-
 }

@@ -56,6 +56,11 @@ public class CentroCosto {
     @Column(name = "fecha_actualizacion")
     private LocalDateTime fechaActualizacion;
 
+    @Column(name = "creado_por", length = 50, updatable = false)
+    private String creadoPor;
+
+    @Column(name = "modificado_por", length = 50)
+    private String modificadoPor;
 
 
 

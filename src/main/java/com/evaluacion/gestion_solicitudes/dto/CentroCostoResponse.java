@@ -9,5 +9,9 @@ public record CentroCostoResponse(
         String descripcion,
         boolean activo,
         LocalDateTime fechaCreacion,
-        LocalDateTime fechaActualizacion) {
+        LocalDateTime fechaActualizacion,
+         String creadoPor,
+        String modificadoPor
+
+) {
 }

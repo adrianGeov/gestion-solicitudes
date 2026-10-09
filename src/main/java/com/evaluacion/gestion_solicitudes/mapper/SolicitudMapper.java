@@ -42,7 +42,10 @@ public class SolicitudMapper {
                 cc.getCodigo(),
                 cc.getNombre(),
                 entity.getFechaCreacion(),
-                entity.getFechaActualizacion());
+                entity.getFechaActualizacion(),
+                entity.getCreadoPor(),
+                entity.getModificadoPor()
+        );
     }
 
 }

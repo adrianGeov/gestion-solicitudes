@@ -18,6 +18,10 @@ public record SolicitudResponse(
         String centroCostoCodigo,
         String centroCostoNombre,
         LocalDateTime fechaCreacion,
-        LocalDateTime fechaActualizacion) {
+        LocalDateTime fechaActualizacion,
+        String creadoPor,
+        String modificadoPor
+
+) {
 
 }

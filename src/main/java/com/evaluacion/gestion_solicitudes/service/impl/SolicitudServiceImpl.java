@@ -1,10 +1,5 @@
 package com.evaluacion.gestion_solicitudes.service.impl;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import com.evaluacion.gestion_solicitudes.dto.SolicitudFiltro;
 import com.evaluacion.gestion_solicitudes.dto.SolicitudRequest;
 import com.evaluacion.gestion_solicitudes.dto.SolicitudResponse;
@@ -17,10 +12,14 @@ import com.evaluacion.gestion_solicitudes.mapper.SolicitudMapper;
 import com.evaluacion.gestion_solicitudes.repository.CentroCostoRepository;
 import com.evaluacion.gestion_solicitudes.repository.SolicitudRepository;
 import com.evaluacion.gestion_solicitudes.repository.SolicitudSpecification;
+import com.evaluacion.gestion_solicitudes.security.UsuarioAutenticadoProvider;
 import com.evaluacion.gestion_solicitudes.service.SolicitudService;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Service
@@ -33,19 +32,23 @@ public class SolicitudServiceImpl implements SolicitudService {
     private final SolicitudRepository solicitudRepository;
     private final CentroCostoRepository centroCostoRepository;
     private final SolicitudMapper mapper;
+    private final UsuarioAutenticadoProvider usuarioProvider;
 
     @Override
     @Transactional
     public SolicitudResponse crear(SolicitudRequest request) {
         CentroCosto centroCosto = buscarCentroCostoActivo(request.centroCostoId());
 
+        String usuario = usuarioProvider.obtenerUsuarioOSistema();
         Solicitud entity = mapper.toEntity(request, centroCosto);
         if (request.estatus() == null) {
             entity.setEstatus(EstatusSolicitud.PENDIENTE);
         }
+        entity.setCreadoPor(usuario);
 
         Solicitud guardada = solicitudRepository.save(entity);
-        log.info("Solicitud creada con id {} en centro de costo {}", guardada.getId(), centroCosto.getId());
+        log.info("Solicitud creada con id {} en centro de costo {} por {}",
+                guardada.getId(), centroCosto.getId(), usuario);
         return mapper.toResponse(guardada);
     }
 
@@ -80,9 +83,12 @@ public class SolicitudServiceImpl implements SolicitudService {
                 ? entity.getCentroCosto()
                 : buscarCentroCostoActivo(request.centroCostoId());
 
+        String usuario = usuarioProvider.obtenerUsuarioOSistema();
         mapper.updateEntity(entity, request, centroCosto);
+        entity.setModificadoPor(usuario);
+
         Solicitud actualizada = solicitudRepository.saveAndFlush(entity);
-        log.info("Solicitud {} actualizada", id);
+        log.info("Solicitud {} actualizada por {}", id, usuario);
         return mapper.toResponse(actualizada);
     }
 
@@ -90,8 +96,11 @@ public class SolicitudServiceImpl implements SolicitudService {
     @Transactional
     public void eliminar(Long id) {
         Solicitud entity = buscarActiva(id);
+
+        String usuario = usuarioProvider.obtenerUsuarioOSistema();
         entity.setActivo(false); // Eliminación lógica
-        log.info("Solicitud {} eliminada lógicamente", id);
+        entity.setModificadoPor(usuario);
+        log.info("Solicitud {} eliminada lógicamente por {}", id, usuario);
     }
 
     private Solicitud buscarActiva(Long id) {
@@ -103,5 +112,4 @@ public class SolicitudServiceImpl implements SolicitudService {
         return centroCostoRepository.findByIdAndActivoTrue(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Centro de costo", id));
     }
-
 }

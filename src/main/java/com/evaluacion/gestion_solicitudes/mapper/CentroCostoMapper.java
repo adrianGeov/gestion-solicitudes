@@ -29,7 +29,11 @@ public class CentroCostoMapper {
                 entity.getDescripcion(),
                 entity.isActivo(),
                 entity.getFechaCreacion(),
-                entity.getFechaActualizacion());
+                entity.getFechaActualizacion(),
+                entity.getCreadoPor(),
+                entity.getModificadoPor()
+            
+            );
     }
 
 }
