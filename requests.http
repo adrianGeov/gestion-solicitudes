@@ -93,3 +93,60 @@ Content-Type: application/json
 
 ### Eliminar solicitud (lógico)
 DELETE {{baseUrl}}/solicitudes/1
+
+### ===== PRUEBAS DE ERRORES =====
+
+### 404 - Centro de costo inexistente
+GET {{baseUrl}}/centros-costo/999
+
+### 409 - Código duplicado (ejecutar después de crear CC-001)
+POST {{baseUrl}}/centros-costo
+Content-Type: application/json
+
+{
+  "codigo": "CC-001",
+  "nombre": "Duplicado"
+}
+
+### 400 - Estatus inválido en el body
+POST {{baseUrl}}/solicitudes
+Content-Type: application/json
+
+{
+  "titulo": "Prueba",
+  "monto": 100,
+  "fechaSolicitud": "2026-10-01",
+  "centroCostoId": 1,
+  "estatus": "CANCELADA"
+}
+
+### 400 - Id con formato inválido
+GET {{baseUrl}}/solicitudes/abc
+
+### 400 - Monto negativo
+POST {{baseUrl}}/solicitudes
+Content-Type: application/json
+
+{
+  "titulo": "Prueba",
+  "monto": -50,
+  "fechaSolicitud": "2026-10-01",
+  "centroCostoId": 1
+}
+
+### 409 - Rango de fechas invertido
+GET {{baseUrl}}/solicitudes?fechaDesde=2026-12-31&fechaHasta=2026-01-01
+
+### 409 - Eliminar centro con solicitudes activas
+DELETE {{baseUrl}}/centros-costo/1
+
+### ===== API EXTERNA (JSONPlaceholder) =====
+
+### Listar usuarios externos
+GET {{baseUrl}}/usuarios-externos
+
+### Obtener usuario externo
+GET {{baseUrl}}/usuarios-externos/1
+
+### 404 - Usuario externo inexistente
+GET {{baseUrl}}/usuarios-externos/999

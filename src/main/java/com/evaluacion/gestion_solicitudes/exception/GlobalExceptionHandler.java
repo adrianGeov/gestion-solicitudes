@@ -108,6 +108,16 @@ public class GlobalExceptionHandler {
                 "Ocurrió un error interno. Intente más tarde.", request, List.of());
     }
 
+
+    // ===== 503 SERVICE UNAVAILABLE =====
+
+    @ExceptionHandler(ExternalServiceException.class)
+    public ResponseEntity<ErrorResponse> handleExternalService(ExternalServiceException ex,
+                                                               HttpServletRequest request) {
+        log.error("Falla en servicio externo: {}", ex.getMessage());
+        return build(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage(), request, List.of());
+    }
+
     // ===== Utilitario =====
 
     private ResponseEntity<ErrorResponse> build(HttpStatus status, String mensaje,
