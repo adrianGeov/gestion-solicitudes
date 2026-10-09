@@ -1,0 +1,95 @@
+@baseUrl = http://localhost:8080/api/v1
+
+### ===== CENTROS DE COSTO =====
+
+### Crear centro de costo
+POST {{baseUrl}}/centros-costo
+Content-Type: application/json
+
+{
+  "codigo": "CC-001",
+  "nombre": "Tecnología",
+  "descripcion": "Área de sistemas"
+}
+
+### Crear otro centro de costo
+POST {{baseUrl}}/centros-costo
+Content-Type: application/json
+
+{
+  "codigo": "CC-002",
+  "nombre": "Recursos Humanos",
+  "descripcion": "Área de personal"
+}
+
+### Obtener por id
+GET {{baseUrl}}/centros-costo/1
+
+### Listar paginado y filtrado por nombre
+GET {{baseUrl}}/centros-costo?nombre=tec&page=0&size=5&sort=nombre,asc
+
+### Actualizar
+PUT {{baseUrl}}/centros-costo/1
+Content-Type: application/json
+
+{
+  "codigo": "CC-001",
+  "nombre": "Tecnología e Innovación",
+  "descripcion": "Área de sistemas y TI"
+}
+
+### Validación: debe responder 400 (cuando tengamos el handler)
+POST {{baseUrl}}/centros-costo
+Content-Type: application/json
+
+{
+  "codigo": "",
+  "nombre": ""
+}
+
+### ===== SOLICITUDES =====
+
+### Crear solicitud
+POST {{baseUrl}}/solicitudes
+Content-Type: application/json
+
+{
+  "titulo": "Compra de laptops",
+  "descripcion": "5 laptops para el equipo de desarrollo",
+  "monto": 125000.50,
+  "fechaSolicitud": "2026-10-01",
+  "centroCostoId": 1
+}
+
+### Crear solicitud aprobada
+POST {{baseUrl}}/solicitudes
+Content-Type: application/json
+
+{
+  "titulo": "Licencias de software",
+  "monto": 45000.00,
+  "fechaSolicitud": "2026-09-15",
+  "centroCostoId": 1,
+  "estatus": "APROBADA"
+}
+
+### Obtener solicitud por id
+GET {{baseUrl}}/solicitudes/1
+
+### Listar con filtros, paginación y orden
+GET {{baseUrl}}/solicitudes?estatus=PENDIENTE&centroCostoId=1&fechaDesde=2026-01-01&fechaHasta=2026-12-31&page=0&size=10&sort=monto,desc
+
+### Actualizar solicitud
+PUT {{baseUrl}}/solicitudes/1
+Content-Type: application/json
+
+{
+  "titulo": "Compra de laptops (actualizado)",
+  "descripcion": "6 laptops",
+  "monto": 150000.00,
+  "fechaSolicitud": "2026-10-01",
+  "centroCostoId": 1
+}
+
+### Eliminar solicitud (lógico)
+DELETE {{baseUrl}}/solicitudes/1
