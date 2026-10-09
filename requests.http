@@ -1,164 +1,23 @@
+###############################################################################
+#  API Gestión de Solicitudes y Centros de Costo
+#
+#  Uso (VS Code + extensión REST Client):
+#   1. Levantar la app:  .\mvnw.cmd spring-boot:run
+#   2. Ejecutar PRIMERO las dos peticiones de LOGIN.
+#   3. Ejecutar el resto EN ORDEN, de arriba hacia abajo.
+#      Los tokens y los ids creados se reutilizan automáticamente.
+###############################################################################
+
 @baseUrl = http://localhost:8080/api/v1
 
-### ===== CENTROS DE COSTO =====
 
-### Crear centro de costo
-POST {{baseUrl}}/centros-costo
-Authorization: Bearer {{tokenUser}}
-Content-Type: application/json
+###############################################################################
+# 1. AUTENTICACIÓN  (ejecutar primero)
+###############################################################################
 
-{
-  "codigo": "CC-111",
-  "nombre": "Tecnología",
-  "descripcion": "Área de sistemas"
-}
-
-### Crear otro centro de costo
-POST {{baseUrl}}/centros-costo
-Content-Type: application/json
-
-{
-  "codigo": "CC-002",
-  "nombre": "Recursos Humanos",
-  "descripcion": "Área de personal"
-}
-
-### Obtener por id
-GET {{baseUrl}}/centros-costo/1
-
-### Listar paginado y filtrado por nombre
-GET {{baseUrl}}/centros-costo?nombre=tec&page=0&size=5&sort=nombre,asc
-
-### Actualizar
-PUT {{baseUrl}}/centros-costo/1
-Content-Type: application/json
-
-{
-  "codigo": "CC-001",
-  "nombre": "Tecnología e Innovación",
-  "descripcion": "Área de sistemas y TI"
-}
-
-### Validación: debe responder 400 (cuando tengamos el handler)
-POST {{baseUrl}}/centros-costo
-Content-Type: application/json
-
-{
-  "codigo": "",
-  "nombre": ""
-}
-
-### ===== SOLICITUDES =====
-
-### Crear solicitud
-POST {{baseUrl}}/solicitudes
-Content-Type: application/json
-
-{
-  "titulo": "Compra de laptops",
-  "descripcion": "5 laptops para el equipo de desarrollo",
-  "monto": 125000.50,
-  "fechaSolicitud": "2026-10-01",
-  "centroCostoId": 1
-}
-
-### Crear solicitud aprobada
-POST {{baseUrl}}/solicitudes
-Content-Type: application/json
-
-{
-  "titulo": "Licencias de software",
-  "monto": 45000.00,
-  "fechaSolicitud": "2026-09-15",
-  "centroCostoId": 1,
-  "estatus": "APROBADA"
-}
-
-### Obtener solicitud por id
-GET {{baseUrl}}/solicitudes/1
-
-### Listar con filtros, paginación y orden
-GET {{baseUrl}}/solicitudes?estatus=PENDIENTE&centroCostoId=1&fechaDesde=2026-01-01&fechaHasta=2026-12-31&page=0&size=10&sort=monto,desc
-
-### Actualizar solicitud
-PUT {{baseUrl}}/solicitudes/1
-Content-Type: application/json
-
-{
-  "titulo": "Compra de laptops (actualizado)",
-  "descripcion": "6 laptops",
-  "monto": 150000.00,
-  "fechaSolicitud": "2026-10-01",
-  "centroCostoId": 1
-}
-
-### Eliminar solicitud (lógico)
-DELETE {{baseUrl}}/solicitudes/1
-
-### ===== PRUEBAS DE ERRORES =====
-
-### 404 - Centro de costo inexistente
-GET {{baseUrl}}/centros-costo/999
-
-### 409 - Código duplicado (ejecutar después de crear CC-001)
-POST {{baseUrl}}/centros-costo
-Content-Type: application/json
-
-{
-  "codigo": "CC-001",
-  "nombre": "Duplicado"
-}
-
-### 400 - Estatus inválido en el body
-POST {{baseUrl}}/solicitudes
-Content-Type: application/json
-
-{
-  "titulo": "Prueba",
-  "monto": 100,
-  "fechaSolicitud": "2026-10-01",
-  "centroCostoId": 1,
-  "estatus": "CANCELADA"
-}
-
-### 400 - Id con formato inválido
-GET {{baseUrl}}/solicitudes/abc
-
-### 400 - Monto negativo
-POST {{baseUrl}}/solicitudes
-Authorization: Bearer {{tokenAdmin}}
-Content-Type: application/json
-
-{
-  "titulo": "Prueba",
-  "monto": -50,
-  "fechaSolicitud": "2026-10-01",
-  "centroCostoId": 1
-}
-
-### 409 - Rango de fechas invertido
-GET {{baseUrl}}/solicitudes?fechaDesde=2026-12-31&fechaHasta=2026-01-01
-
-### 409 - Eliminar centro con solicitudes activas
-DELETE {{baseUrl}}/centros-costo/1
-
-### ===== API EXTERNA (JSONPlaceholder) =====
-
-### Listar usuarios externos
-GET {{baseUrl}}/usuarios-externos
-
-### Obtener usuario externo
-GET {{baseUrl}}/usuarios-externos/1
-
-### 404 - Usuario externo inexistente
-GET {{baseUrl}}/usuarios-externos/999
-
-### ===== AUTENTICACIÓN =====
-
-### Login como ADMIN
+### 1.1 Login como ADMIN  -> 200
 # @name loginAdmin
 POST {{baseUrl}}/auth/login
-Authorization: Bearer {{tokenAdmin}}
 Content-Type: application/json
 
 {
@@ -166,7 +25,7 @@ Content-Type: application/json
   "password": "Admin123*"
 }
 
-### Login como USER
+### 1.2 Login como USER  -> 200
 # @name loginUser
 POST {{baseUrl}}/auth/login
 Content-Type: application/json
@@ -176,16 +35,302 @@ Content-Type: application/json
   "password": "Usuario123*"
 }
 
-### ===== PRUEBAS DE SEGURIDAD =====
+###
+@tokenAdmin = {{loginAdmin.response.body.token}}
+@tokenUser = {{loginUser.response.body.token}}
 
-### 401 - Sin token
+
+###############################################################################
+# 2. CENTROS DE COSTO
+###############################################################################
+
+### 2.1 Crear centro de costo (ADMIN)  -> 201
+# @name crearCentro1
+POST {{baseUrl}}/centros-costo
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{
+  "codigo": "CC-TEC",
+  "nombre": "Tecnología",
+  "descripcion": "Área de sistemas"
+}
+
+### 2.2 Crear segundo centro de costo (USER)  -> 201
+# @name crearCentro2
+POST {{baseUrl}}/centros-costo
+Authorization: Bearer {{tokenUser}}
+Content-Type: application/json
+
+{
+  "codigo": "CC-RH",
+  "nombre": "Recursos Humanos",
+  "descripcion": "Área de personal"
+}
+
+###
+@centro1Id = {{crearCentro1.response.body.id}}
+@centro2Id = {{crearCentro2.response.body.id}}
+
+### 2.3 Consultar centro de costo por id  -> 200
+GET {{baseUrl}}/centros-costo/{{centro1Id}}
+Authorization: Bearer {{tokenAdmin}}
+
+### 2.4 Listar centros de costo paginado  -> 200
+GET {{baseUrl}}/centros-costo?page=0&size=10&sort=nombre,asc
+Authorization: Bearer {{tokenAdmin}}
+
+### 2.5 Listar filtrando por nombre (búsqueda parcial)  -> 200
+GET {{baseUrl}}/centros-costo?nombre=tec&page=0&size=5
+Authorization: Bearer {{tokenUser}}
+
+### 2.6 Actualizar centro de costo (USER, queda en modificadoPor)  -> 200
+PUT {{baseUrl}}/centros-costo/{{centro1Id}}
+Authorization: Bearer {{tokenUser}}
+Content-Type: application/json
+
+{
+  "codigo": "CC-TEC",
+  "nombre": "Tecnología e Innovación",
+  "descripcion": "Área de sistemas y TI"
+}
+
+
+###############################################################################
+# 3. SOLICITUDES
+###############################################################################
+
+### 3.1 Crear solicitud sin estatus (queda PENDIENTE)  -> 201
+# @name crearSolicitud1
+POST {{baseUrl}}/solicitudes
+Authorization: Bearer {{tokenUser}}
+Content-Type: application/json
+
+{
+  "titulo": "Compra de laptops",
+  "descripcion": "5 laptops para el equipo de desarrollo",
+  "monto": 125000.50,
+  "fechaSolicitud": "2026-10-01",
+  "centroCostoId": {{centro1Id}}
+}
+
+### 3.2 Crear solicitud APROBADA  -> 201
+# @name crearSolicitud2
+POST {{baseUrl}}/solicitudes
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{
+  "titulo": "Licencias de software",
+  "descripcion": "Licencias anuales de IDE",
+  "monto": 45000.00,
+  "fechaSolicitud": "2026-09-15",
+  "centroCostoId": {{centro1Id}},
+  "estatus": "APROBADA"
+}
+
+### 3.3 Crear solicitud en otro centro de costo  -> 201
+# @name crearSolicitud3
+POST {{baseUrl}}/solicitudes
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{
+  "titulo": "Curso de capacitación",
+  "monto": 18000.00,
+  "fechaSolicitud": "2026-08-20",
+  "centroCostoId": {{centro2Id}},
+  "estatus": "RECHAZADA"
+}
+
+###
+@solicitud1Id = {{crearSolicitud1.response.body.id}}
+@solicitud2Id = {{crearSolicitud2.response.body.id}}
+@solicitud3Id = {{crearSolicitud3.response.body.id}}
+
+### 3.4 Consultar solicitud por id  -> 200
+GET {{baseUrl}}/solicitudes/{{solicitud1Id}}
+Authorization: Bearer {{tokenUser}}
+
+### 3.5 Listar todas paginado (orden por defecto: fechaSolicitud desc)  -> 200
+GET {{baseUrl}}/solicitudes?page=0&size=10
+Authorization: Bearer {{tokenUser}}
+
+### 3.6 Filtrar por estatus  -> 200
+GET {{baseUrl}}/solicitudes?estatus=PENDIENTE
+Authorization: Bearer {{tokenUser}}
+
+### 3.7 Filtrar por centro de costo, ordenado por monto  -> 200
+GET {{baseUrl}}/solicitudes?centroCostoId={{centro1Id}}&sort=monto,desc
+Authorization: Bearer {{tokenUser}}
+
+### 3.8 Filtrar por título (parcial) y rango de fechas  -> 200
+GET {{baseUrl}}/solicitudes?titulo=laptop&fechaDesde=2026-01-01&fechaHasta=2026-12-31
+Authorization: Bearer {{tokenUser}}
+
+### 3.9 Todos los filtros combinados + paginación  -> 200
+GET {{baseUrl}}/solicitudes?estatus=PENDIENTE&centroCostoId={{centro1Id}}&fechaDesde=2026-01-01&fechaHasta=2026-12-31&page=0&size=5&sort=monto,desc
+Authorization: Bearer {{tokenAdmin}}
+
+### 3.10 Actualizar solicitud PENDIENTE  -> 200
+PUT {{baseUrl}}/solicitudes/{{solicitud1Id}}
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{
+  "titulo": "Compra de laptops (actualizado)",
+  "descripcion": "6 laptops para el equipo de desarrollo",
+  "monto": 150000.00,
+  "fechaSolicitud": "2026-10-01",
+  "centroCostoId": {{centro1Id}}
+}
+
+
+###############################################################################
+# 4. CONSUMO DE API EXTERNA (JSONPlaceholder)
+###############################################################################
+
+### 4.1 Listar usuarios externos  -> 200
+GET {{baseUrl}}/usuarios-externos
+Authorization: Bearer {{tokenUser}}
+
+### 4.2 Consultar usuario externo por id  -> 200
+GET {{baseUrl}}/usuarios-externos/1
+Authorization: Bearer {{tokenUser}}
+
+### 4.3 Usuario externo inexistente  -> 404
+GET {{baseUrl}}/usuarios-externos/999
+Authorization: Bearer {{tokenUser}}
+
+
+###############################################################################
+# 5. VALIDACIONES Y ERRORES
+###############################################################################
+
+### 5.1 Campos obligatorios vacíos  -> 400
+POST {{baseUrl}}/centros-costo
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{
+  "codigo": "",
+  "nombre": ""
+}
+
+### 5.2 Código demasiado largo  -> 400
+POST {{baseUrl}}/centros-costo
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{
+  "codigo": "CODIGO-DEMASIADO-LARGO-PARA-EL-CAMPO",
+  "nombre": "Prueba"
+}
+
+### 5.3 Monto negativo y campos faltantes  -> 400
+POST {{baseUrl}}/solicitudes
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{
+  "titulo": "Prueba",
+  "monto": -50
+}
+
+### 5.4 Estatus inválido en el body  -> 400
+POST {{baseUrl}}/solicitudes
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{
+  "titulo": "Prueba",
+  "monto": 100,
+  "fechaSolicitud": "2026-10-01",
+  "centroCostoId": {{centro1Id}},
+  "estatus": "CANCELADA"
+}
+
+### 5.5 JSON mal formado  -> 400
+POST {{baseUrl}}/centros-costo
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{ "codigo": "CC-X", "nombre": }
+
+### 5.6 Id con formato inválido  -> 400
+GET {{baseUrl}}/solicitudes/abc
+Authorization: Bearer {{tokenAdmin}}
+
+### 5.7 Estatus inválido en query param  -> 400
+GET {{baseUrl}}/solicitudes?estatus=CANCELADA
+Authorization: Bearer {{tokenAdmin}}
+
+### 5.8 Centro de costo inexistente  -> 404
+GET {{baseUrl}}/centros-costo/999999
+Authorization: Bearer {{tokenAdmin}}
+
+### 5.9 Crear solicitud con centro de costo inexistente  -> 404
+POST {{baseUrl}}/solicitudes
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{
+  "titulo": "Prueba",
+  "monto": 100,
+  "fechaSolicitud": "2026-10-01",
+  "centroCostoId": 999999
+}
+
+### 5.10 Ruta inexistente  -> 404
+GET {{baseUrl}}/ruta-que-no-existe
+Authorization: Bearer {{tokenAdmin}}
+
+### 5.11 Método no permitido  -> 405
+PATCH {{baseUrl}}/centros-costo/{{centro1Id}}
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{}
+
+### 5.12 Código de centro de costo duplicado  -> 409
+POST {{baseUrl}}/centros-costo
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{
+  "codigo": "CC-TEC",
+  "nombre": "Duplicado"
+}
+
+### 5.13 Modificar solicitud que NO está PENDIENTE  -> 409
+PUT {{baseUrl}}/solicitudes/{{solicitud2Id}}
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{
+  "titulo": "Intento de cambio",
+  "monto": 1.00,
+  "fechaSolicitud": "2026-09-15",
+  "centroCostoId": {{centro1Id}}
+}
+
+### 5.14 Rango de fechas invertido  -> 409
+GET {{baseUrl}}/solicitudes?fechaDesde=2026-12-31&fechaHasta=2026-01-01
+Authorization: Bearer {{tokenAdmin}}
+
+
+###############################################################################
+# 6. SEGURIDAD
+###############################################################################
+
+### 6.1 Sin token  -> 401
 GET {{baseUrl}}/centros-costo
 
-### 401 - Token inválido
+### 6.2 Token inválido  -> 401
 GET {{baseUrl}}/centros-costo
 Authorization: Bearer token-falso
 
-### 401 - Credenciales incorrectas
+### 6.3 Credenciales incorrectas  -> 401
 POST {{baseUrl}}/auth/login
 Content-Type: application/json
 
@@ -194,14 +339,58 @@ Content-Type: application/json
   "password": "incorrecta"
 }
 
-### 200 - USER sí puede consultar
-GET {{baseUrl}}/centros-costo
+### 6.4 Login con datos incompletos  -> 400
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": ""
+}
+
+### 6.5 USER intenta eliminar una solicitud  -> 403
+DELETE {{baseUrl}}/solicitudes/{{solicitud1Id}}
 Authorization: Bearer {{tokenUser}}
 
-### 403 - USER NO puede eliminar
-DELETE {{baseUrl}}/solicitudes/2
+### 6.6 USER intenta eliminar un centro de costo  -> 403
+DELETE {{baseUrl}}/centros-costo/{{centro2Id}}
 Authorization: Bearer {{tokenUser}}
 
-###
-@tokenAdmin = {{loginAdmin.response.body.token}}
-@tokenUser = {{loginUser.response.body.token}}
+
+###############################################################################
+# 7. ELIMINACIÓN LÓGICA (solo ADMIN) - ejecutar al final
+###############################################################################
+
+### 7.1 Eliminar centro con solicitudes activas  -> 409
+DELETE {{baseUrl}}/centros-costo/{{centro1Id}}
+Authorization: Bearer {{tokenAdmin}}
+
+### 7.2 ADMIN elimina una solicitud  -> 204
+DELETE {{baseUrl}}/solicitudes/{{solicitud1Id}}
+Authorization: Bearer {{tokenAdmin}}
+
+### 7.3 La solicitud eliminada ya no se encuentra  -> 404
+GET {{baseUrl}}/solicitudes/{{solicitud1Id}}
+Authorization: Bearer {{tokenAdmin}}
+
+### 7.4 Eliminar la solicitud del segundo centro  -> 204
+DELETE {{baseUrl}}/solicitudes/{{solicitud3Id}}
+Authorization: Bearer {{tokenAdmin}}
+
+### 7.5 Ahora el segundo centro ya no tiene solicitudes activas  -> 204
+DELETE {{baseUrl}}/centros-costo/{{centro2Id}}
+Authorization: Bearer {{tokenAdmin}}
+
+### 7.6 El centro eliminado ya no aparece  -> 404
+GET {{baseUrl}}/centros-costo/{{centro2Id}}
+Authorization: Bearer {{tokenAdmin}}
+
+
+###############################################################################
+# 8. ACTUATOR (públicos)
+###############################################################################
+
+### 8.1 Health check  -> 200
+GET http://localhost:8080/actuator/health
+
+### 8.2 Información de la aplicación  -> 200
+GET http://localhost:8080/actuator/info
